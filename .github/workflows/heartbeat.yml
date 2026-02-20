@@ -8,5 +8,5 @@ jobs:
     steps:
       - name: Ping Vigil Heartbeat
         run: |
-          curl -X GET "https://your-vercel-project.vercel.app/api/cron/heartbeat" \
+          curl -X GET "https://vercel.com/abdelrahman-ashrafs-projects-29915a44/vigil/4kH5rBTSwJzx4BCRxEnUr2Tu8DT5/api/cron/heartbeat" \
           -H "x-api-key: ${{ secrets.CRON_SECRET }}"

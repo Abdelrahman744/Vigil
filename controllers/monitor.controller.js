@@ -61,3 +61,15 @@ export const getAllLogs = async (req, res) => {
     res.status(500).json({ message: "Error fetching logs", error: error.message });
   }
 };
+
+
+
+// Delete all ping logs
+export const clearLogs = async (req, res) => {
+  try {
+    await Monitor.deleteMany({});
+    res.status(200).json({ message: "All logs cleared successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error clearing logs", error: error.message });
+  }
+};

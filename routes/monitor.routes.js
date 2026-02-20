@@ -1,5 +1,5 @@
 import express from 'express';
-import { pingWebsite,getAllLogs } from '../controllers/monitor.controller.js';
+import { pingWebsite,getAllLogs,clearLogs } from '../controllers/monitor.controller.js';
 
 const router = express.Router();
 
@@ -7,7 +7,8 @@ const router = express.Router();
 router.post('/ping', pingWebsite);
 
 // Add this below your ping route
-router.get('/logs', getAllLogs);
+router.get('/all', getAllLogs);
+router.delete('/clear', clearLogs)
 
 
 export default router;

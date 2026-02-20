@@ -1,0 +1,17 @@
+# Dependency folders
+node_modules/
+
+# Environment variables (Crucial for security!)
+.env
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# If you use VS Code's local settings
+.vscode/

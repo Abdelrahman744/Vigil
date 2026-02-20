@@ -2,6 +2,9 @@
 
 Vigil is a professional-grade, serverless monitoring service designed to track website availability and performance in real-time. Built with Node.js and deployed on Vercel, it uses a distributed heartbeat system triggered by GitHub Actions to ensure your web services stay healthy.
 
+## Live Demo 
+https://vigil-rust.vercel.app/api/signup
+
 ## 🚀 Postman Collection
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://documenter.getpostman.com/view/49732434/2sBXcEjfcq)
 *(Click above to view the complete API documentation and test the endpoints directly)*

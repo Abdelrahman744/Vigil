@@ -2,6 +2,9 @@ import cron from 'node-cron';
 import axios from 'axios';
 import Target from '../models/target.model.js';
 import Monitor from '../models/monitor.model.js';
+import { autoCleanup } from '../controllers/monitor.controller.js';
+
+
 
 export const startMonitoring = () => {
     // This runs every minute
@@ -30,5 +33,9 @@ export const startMonitoring = () => {
                 console.log(`❌ ${target.name} is DOWN`);
             }
         }
+    });
+
+    cron.schedule('0 0 * * *', async () => {
+        await autoCleanup();
     });
 };

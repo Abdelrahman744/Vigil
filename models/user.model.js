@@ -8,11 +8,14 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
+userSchema.pre('save', async function () {
+    // 1. If password isn't modified, just return (Mongoose proceeds automatically)
+    if (!this.isModified('password')) return;
     
+    // 2. Hash the password
     this.password = await bcrypt.hash(this.password, 12);
-    next(); // This 'next' refers to the parameter above
+    
+    // NO next() call needed here because the function is async
 });
 
 // Method to check password

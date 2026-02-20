@@ -2,6 +2,8 @@ import express from 'express';
 import { signup, login } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { pingWebsite,getAllLogs,clearLogs,addTarget,getTargets,deleteTarget,toggleTarget,getTargetStats } from '../controllers/monitor.controller.js';
+import { runHeartbeat } from '../services/monitor.service.js';
+import { autoCleanup } from '../controllers/monitor.controller.js';
 
 const router = express.Router();
 
@@ -25,5 +27,17 @@ router.get('/targets',getTargets);
 router.delete('/targets/:id', deleteTarget);
 router.patch('/targets/:id/toggle', toggleTarget);
 router.get('/targets/:id/stats', getTargetStats);
+
+
+
+router.get('/cron/heartbeat', async (req, res) => {
+    await runHeartbeat();
+    res.status(200).send('Heartbeat completed');
+});
+
+router.get('/cron/cleanup', async (req, res) => {
+    await autoCleanup();
+    res.status(200).send('Cleanup completed');
+});
 
 export default router;

@@ -1,4 +1,3 @@
-import cron from 'node-cron';
 import axios from 'axios';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv'; 
@@ -64,43 +63,27 @@ const pingWithRetry = async (url, retries = 3, delay = 2000) => {
     }
 };
 
-export const startMonitoring = () => {
-    // Heartbeat check every minute
-    cron.schedule('* * * * *', async () => {
-        console.log('--- 🛡️ Vigil Heartbeat: Checking Targets 🛡️ ---');
-        const targets = await Target.find({ isActive: true });
 
-        if (targets.length === 0) {
-            console.log('ℹ️ No active targets found to check.');
-            return;
+export const runHeartbeat = async () => {
+    console.log('--- 🛡️ Vigil Heartbeat: Triggered by Vercel 🛡️ ---');
+    const targets = await Target.find({ isActive: true });
+    
+    if (targets.length === 0) return;
+
+    for (const target of targets) {
+        const result = await pingWithRetry(target.url);
+        
+        if (result.status === 'Down') {
+            await sendAlertEmail(target.name, target.url);
         }
 
-        for (const target of targets) {
-            const result = await pingWithRetry(target.url);
-            
-            // Send alert if the status is Down
-            if (result.status === 'Down') {
-                await sendAlertEmail(target.name, target.url);
-            }
-
-            await Monitor.create({
-                url: target.url,
-                status: result.status,
-                responseTime: result.responseTime,
-                statusCode: result.statusCode, 
-                errorMessage: result.errorMessage 
-            });
-
-            if (result.status === 'Up') {
-                console.log(`✅ ${target.name} is UP (${result.responseTime}ms)`);
-            } else {
-                console.log(`❌ ${target.name} is DOWN after 3 attempts`);
-            }
-        }
-    });
-
-    // Automated daily cleanup 
-    cron.schedule('0 0 * * *', async () => {
-        await autoCleanup();
-    });
+        await Monitor.create({
+            url: target.url,
+            status: result.status,
+            responseTime: result.responseTime,
+            statusCode: result.statusCode,
+            errorMessage: result.errorMessage 
+        });
+    }
 };
+

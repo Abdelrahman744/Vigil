@@ -2,12 +2,17 @@
 
 Vigil is a professional-grade, serverless monitoring service designed to track website availability and performance in real-time. Built with Node.js and deployed on Vercel, it uses a distributed heartbeat system triggered by GitHub Actions to ensure your web services stay healthy.
 
-## Live Demo 
-https://vigil-rust.vercel.app/api/signup
+### 🔗 Quick Links
+* **Live Demo:** [Vigil API Registration](https://vigil-rust.vercel.app/api/signup)
+* **API Documentation:** [![Run in Postman](https://run.pstmn.io/button.svg)](https://documenter.getpostman.com/view/49732434/2sBXcEjfcq) *(Test endpoints directly)*
 
-## 🚀 Postman Collection
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://documenter.getpostman.com/view/49732434/2sBXcEjfcq)
-*(Click above to view the complete API documentation and test the endpoints directly)*
+---
+
+## 🏗️ Architecture Spotlight: The "Serverless" Solution
+
+This API is designed to run in a stateless, serverless environment (Vercel). A common limitation of serverless functions (FaaS) is that they "sleep" when inactive, meaning traditional long-running tasks like `node-cron` fail to execute reliably.
+
+**The Vigil Solution:** To circumvent this infrastructure constraint without paying for a dedicated VPS, Vigil utilizes **GitHub Actions** as an external, automated "heartbeat." A `.yml` workflow sends a scheduled `GET` request to the protected `/api/cron/heartbeat` endpoint. This wakes up the Vercel function, authenticates via a secure `CRON_SECRET` header, and safely executes the monitoring cycle.
 
 ---
 
@@ -17,7 +22,7 @@ https://vigil-rust.vercel.app/api/signup
 * **Smart Retry Mechanism:** Performs 3 retries with specific delays to eliminate false positives before declaring a service down.
 * **Real-time Email Alerts:** Instant notifications via SMTP (Nodemailer) when a service becomes unresponsive.
 * **Performance Analytics:** Calculates real-time Uptime percentages and average latency (ms) for every target.
-* **Secure Multi-tenant API:** Core routes are protected by JWT (JSON Web Tokens) with a custom API key securing the cron tasks.
+* **Secure Multi-tenant API:** Core routes are protected by JWT (JSON Web Tokens) with a custom API key securing the automated cron tasks.
 * **Auto-Cleanup:** Automated maintenance route that wipes logs older than 24 hours to optimize database storage.
 
 ---
@@ -27,8 +32,9 @@ https://vigil-rust.vercel.app/api/signup
 * **Runtime:** Node.js, Express.js
 * **Database:** MongoDB (Mongoose ODM)
 * **Deployment:** Vercel (Serverless Functions)
-* **Automation:** GitHub Actions (Cron Jobs)
+* **Automation & CI/CD:** GitHub Actions
 * **Communication:** Axios (HTTP Pings), Nodemailer (Email Alerts)
+* **Security:** bcryptjs (Password Hashing), jsonwebtoken (Auth)
 
 ---
 
@@ -62,17 +68,17 @@ https://vigil-rust.vercel.app/api/signup
 | `GET` | `/api/cron/heartbeat` | Triggers a monitoring cycle (Used by GitHub Actions). |
 | `GET` | `/api/cron/cleanup` | Triggers the 24-hour database log cleanup. |
 
+---
 
---
+## 🚀 Roadmap & Future Enhancements
 
-☁️ Deployment Architecture
-This API is designed to run in a stateless, serverless environment (Vercel). Because serverless functions sleep when inactive, the traditional node-cron package will not work.
+As this project evolves, the following optimizations are planned:
+1. **State-Tracking for Alerts:** Implementing a database-level flag (`isCurrentlyDown`) to track alert states, preventing redundant email dispatches during prolonged downtime.
+2. **Concurrent Execution:** Refactoring the sequential pinging loop to use `Promise.allSettled()`, ensuring the serverless function completes execution well within Vercel's strict 10-second timeout window.
+3. **Database-Level Analytics:** Migrating the statistics calculations (uptime, average latency) from Node.js memory to MongoDB Aggregation Pipelines for better scalability.
 
-To solve this, Vigil uses GitHub Actions as an external "alarm clock." A .yml workflow is configured to send a GET request to the /api/cron/heartbeat endpoint every 5 minutes, passing the CRON_SECRET in the headers to authenticate the request and trigger the monitoring cycle.
+---
 
---
+## 👨‍💻 Author
 
-👨‍💻 Author
-
-Abdelrahman Ashraf Software Engineering Student at Assiut University 
-
+**Abdelrahman Ashraf** *Backend-focused Software Engineering Student | Assiut University*

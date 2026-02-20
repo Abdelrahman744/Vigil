@@ -12,18 +12,18 @@ const monitorSchema = new mongoose.Schema({
     default: 'Pending'
   },
   responseTime: {
-    type: Number, // This stores the milliseconds (ms)
+    type: Number,
     default: 0
   },
   statusCode: {
-    type: Number // e.g., 200, 404, 500
+    type: Number 
   },
+  errorMessage: { type: String },
   lastChecked: {
     type: Date,
     default: Date.now
   }
 }, { 
-  // This automatically adds 'createdAt' and 'updatedAt' fields
   timestamps: true 
 });
 

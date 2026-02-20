@@ -1,6 +1,5 @@
 import axios from 'axios';
 import Monitor from '../models/monitor.model.js';
-
 import Target from '../models/target.model.js';
 
 export const addTarget = async (req, res) => {
@@ -26,9 +25,10 @@ export const getTargets = async (req, res) => {
 };
 
 // Delete a specific target by ID
+
 export const deleteTarget = async (req, res) => {
     try {
-        const { id } = req.params; // Gets the ID from the URL
+        const { id } = req.params;
         const deletedTarget = await Target.findByIdAndDelete(id);
 
         if (!deletedTarget) {
@@ -44,53 +44,37 @@ export const deleteTarget = async (req, res) => {
 
 export const pingWebsite = async (req, res) => {
   const { url } = req.body;
-
-  if (!url) {
-    return res.status(400).json({ message: "Please provide a URL" });
-  }
-
-  // Start the timer
   const start = Date.now();
 
   try {
-    // We use a 5-second timeout so we don't wait forever
     const response = await axios.get(url, { timeout: 5000 });
-    
-    // Calculate how many milliseconds it took
     const duration = Date.now() - start;
 
-    // Save the success result to MongoDB
     const newPing = await Monitor.create({
       url,
       status: 'Up',
-      responseTime: duration
+      responseTime: duration,
+      statusCode: response.status //
     });
 
-    res.status(200).json({
-      message: "Ping Successful",
-      data: newPing
-    });
-
+    res.status(200).json({ message: "Ping Successful", data: newPing });
   } catch (error) {
     const duration = Date.now() - start;
-
-    // Save the failure result to MongoDB
     const failPing = await Monitor.create({
       url,
       status: 'Down',
-      responseTime: duration
+      responseTime: duration,
+      statusCode: error.response ? error.response.status : null, //
+      errorMessage: error.message //
     });
 
-    res.status(500).json({
-      message: "Ping Failed",
-      error: error.message,
-      data: failPing
-    });
+    res.status(500).json({ message: "Ping Failed", data: failPing });
   }
 };
 
 
 // Get all ping history
+
 export const getAllLogs = async (req, res) => {
   try {
     const logs = await Monitor.find().sort({ createdAt: -1 });
@@ -115,7 +99,7 @@ export const clearLogs = async (req, res) => {
 };
 
 
-// Toggle monitoring status (Pause/Resume)
+// Toggle monitoring status 
 export const toggleTarget = async (req, res) => {
     try {
         const { id } = req.params;
@@ -125,7 +109,7 @@ export const toggleTarget = async (req, res) => {
             return res.status(404).json({ message: "Target not found" });
         }
 
-        // Flip the status: if true becomes false, if false becomes true
+        
         target.isActive = !target.isActive;
         await target.save();
 
@@ -141,6 +125,7 @@ export const toggleTarget = async (req, res) => {
 
 
 // Remove logs older than 24 hours
+
 export const autoCleanup = async () => {
     try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -152,5 +137,51 @@ export const autoCleanup = async () => {
         }
     } catch (error) {
         console.error("Cleanup Error:", error.message);
+    }
+};
+
+
+
+
+// Get detailed stats for a specific target
+
+export const getTargetStats = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const target = await Target.findById(id);
+
+        if (!target) {
+            return res.status(404).json({ message: "Target not found" });
+        }
+
+        const logs = await Monitor.find({ url: target.url });
+
+        if (logs.length === 0) {
+            return res.status(200).json({ message: "No logs found for this target yet.", stats: null });
+        }
+
+        const totalPings = logs.length;
+        const upPings = logs.filter(log => log.status === 'Up').length;
+        const availability = ((upPings / totalPings) * 100).toFixed(2);
+
+        // Calculate Average Response Time for "Up" pings
+        const upLogs = logs.filter(log => log.status === 'Up' && log.responseTime > 0);
+        const avgResponseTime = upLogs.length > 0 
+            ? (upLogs.reduce((acc, log) => acc + log.responseTime, 0) / upLogs.length).toFixed(2) 
+            : 0;
+
+        res.status(200).json({
+            targetName: target.name,
+            url: target.url,
+            stats: {
+                totalChecks: totalPings,
+                upChecks: upPings,
+                downChecks: totalPings - upPings,
+                availability: `${availability}%`,
+                averageLatency: `${avgResponseTime}ms`
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error calculating stats", error: error.message });
     }
 };

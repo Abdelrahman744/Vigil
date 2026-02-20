@@ -1,6 +1,18 @@
 import axios from 'axios';
 import Monitor from '../models/monitor.model.js';
 
+import Target from '../models/target.model.js';
+
+export const addTarget = async (req, res) => {
+    try {
+        const { url, name } = req.body;
+        const newTarget = await Target.create({ url, name });
+        res.status(201).json(newTarget);
+    } catch (error) {
+        res.status(500).json({ message: "Error adding target", error: error.message });
+    }
+};
+
 export const pingWebsite = async (req, res) => {
   const { url } = req.body;
 

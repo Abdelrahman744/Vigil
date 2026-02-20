@@ -64,11 +64,15 @@ const pingWithRetry = async (url, retries = 3, delay = 2000) => {
 };
 
 
+
 export const runHeartbeat = async () => {
-    console.log('--- 🛡️ Vigil Heartbeat: Triggered by Vercel 🛡️ ---');
+    console.log('--- 🛡️ Vigil Heartbeat: Triggered Externally ---');
     const targets = await Target.find({ isActive: true });
-    
-    if (targets.length === 0) return;
+
+    if (targets.length === 0) {
+        console.log('ℹ️ No active targets found.');
+        return;
+    }
 
     for (const target of targets) {
         const result = await pingWithRetry(target.url);
@@ -81,9 +85,12 @@ export const runHeartbeat = async () => {
             url: target.url,
             status: result.status,
             responseTime: result.responseTime,
-            statusCode: result.statusCode,
+            statusCode: result.statusCode, 
             errorMessage: result.errorMessage 
         });
+
+        console.log(`${result.status === 'Up' ? '✅' : '❌'} ${target.name} checked.`);
     }
 };
+
 

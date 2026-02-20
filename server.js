@@ -2,8 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import connectDB from './config/db.js';
-import monitorRoutes from './routes/monitor.routes.js'; // Import your routes
-import { startMonitoring } from './services/monitor.service.js';
+import monitorRoutes from './routes/monitor.routes.js'; 
+
 
 
 
@@ -15,7 +15,7 @@ const app = express();
 
 connectDB();
 
-startMonitoring();
+
 
 
 app.use(express.json());

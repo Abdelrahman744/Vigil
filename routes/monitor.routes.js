@@ -12,6 +12,21 @@ const router = express.Router();
 router.post('/signup', signup);
 router.post('/login', login);
 
+router.get('/cron/heartbeat', async (req, res) => {
+    const authHeader = req.headers['x-api-key'];
+    
+    if (authHeader !== process.env.CRON_SECRET) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    try {
+        await runHeartbeat();
+        res.status(200).send('Heartbeat completed');
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
 // Protected Monitoring Routes
 router.use(protect);
 
@@ -29,11 +44,6 @@ router.patch('/targets/:id/toggle', toggleTarget);
 router.get('/targets/:id/stats', getTargetStats);
 
 
-
-router.get('/cron/heartbeat', async (req, res) => {
-    await runHeartbeat();
-    res.status(200).send('Heartbeat completed');
-});
 
 router.get('/cron/cleanup', async (req, res) => {
     await autoCleanup();

@@ -70,15 +70,6 @@ This API is designed to run in a stateless, serverless environment (Vercel). A c
 
 ---
 
-## 🚀 Roadmap & Future Enhancements
-
-As this project evolves, the following optimizations are planned:
-1. **State-Tracking for Alerts:** Implementing a database-level flag (`isCurrentlyDown`) to track alert states, preventing redundant email dispatches during prolonged downtime.
-2. **Concurrent Execution:** Refactoring the sequential pinging loop to use `Promise.allSettled()`, ensuring the serverless function completes execution well within Vercel's strict 10-second timeout window.
-3. **Database-Level Analytics:** Migrating the statistics calculations (uptime, average latency) from Node.js memory to MongoDB Aggregation Pipelines for better scalability.
-
----
-
 ## 👨‍💻 Author
 
 **Abdelrahman Ashraf** *Backend-focused Software Engineering Student | Assiut University*

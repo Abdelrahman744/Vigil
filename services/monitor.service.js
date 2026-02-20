@@ -66,13 +66,10 @@ const pingWithRetry = async (url, retries = 3, delay = 2000) => {
 
 
 export const runHeartbeat = async () => {
-    console.log('--- 🛡️ Vigil Heartbeat: Triggered Externally ---');
+    console.log('--- 🛡️ Vigil Heartbeat: Triggered ---');
     const targets = await Target.find({ isActive: true });
 
-    if (targets.length === 0) {
-        console.log('ℹ️ No active targets found.');
-        return;
-    }
+    if (targets.length === 0) return { message: 'No active targets' };
 
     for (const target of targets) {
         const result = await pingWithRetry(target.url);
@@ -88,9 +85,6 @@ export const runHeartbeat = async () => {
             statusCode: result.statusCode, 
             errorMessage: result.errorMessage 
         });
-
-        console.log(`${result.status === 'Up' ? '✅' : '❌'} ${target.name} checked.`);
     }
+    return { message: 'Heartbeat completed' };
 };
-
-

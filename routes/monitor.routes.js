@@ -2,8 +2,8 @@ import express from 'express';
 import { signup, login } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { pingWebsite,getAllLogs,clearLogs,addTarget,getTargets,deleteTarget,toggleTarget,getTargetStats } from '../controllers/monitor.controller.js';
-import { runHeartbeat } from '../services/monitor.service.js';
 import { autoCleanup } from '../controllers/monitor.controller.js';
+import { runHeartbeat } from '../services/monitor.service.js';
 
 const router = express.Router();
 
@@ -13,17 +13,16 @@ router.post('/signup', signup);
 router.post('/login', login);
 
 router.get('/cron/heartbeat', async (req, res) => {
-    const authHeader = req.headers['x-api-key'];
     
-    if (authHeader !== process.env.CRON_SECRET) {
-        return res.status(401).send('Unauthorized');
+    if (req.headers['x-api-key'] !== process.env.CRON_SECRET) {
+        return res.status(401).json({ message: 'Unauthorized' });
     }
 
     try {
-        await runHeartbeat();
-        res.status(200).send('Heartbeat completed');
+        const result = await runHeartbeat();
+        res.status(200).json(result);
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 

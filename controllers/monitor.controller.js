@@ -64,7 +64,6 @@ export const getAllLogs = async (req, res) => {
 
 
 
-// Delete all ping logs
 export const clearLogs = async (req, res) => {
   try {
     await Monitor.deleteMany({});

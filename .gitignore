@@ -1,7 +1,7 @@
-# Dependency folders
+
 node_modules/
 
-# Environment variables (Crucial for security!)
+
 .env
 
 # Debug logs
@@ -13,5 +13,4 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# If you use VS Code's local settings
 .vscode/

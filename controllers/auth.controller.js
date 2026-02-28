@@ -7,6 +7,8 @@ const signToken = (id) => {
     });
 };
 
+
+
 export const signup = async (req, res, next) => { // Make sure 'next' is here
     try {
         const newUser = await User.create({
@@ -16,17 +18,17 @@ export const signup = async (req, res, next) => { // Make sure 'next' is here
         });
 
         const token = signToken(newUser._id);
-        
-        res.status(201).json({ 
-            status: 'success', 
-            token, 
-            data: { user: newUser } 
+
+        res.status(201).json({
+            status: 'success',
+            token,
+            data: { user: newUser }
         });
     } catch (err) {
         // If you call next(err) here, you MUST have 'next' in the parameters above
-        res.status(400).json({ 
-            status: 'fail', 
-            message: err.message 
+        res.status(400).json({
+            status: 'fail',
+            message: err.message
         });
     }
 };

@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import cors from 'cors';
 import connectDB from './config/db.js';
-import monitorRoutes from './routes/monitor.routes.js'; 
+import monitorRoutes from './routes/monitor.routes.js';
+import setupSwagger from './config/swagger.js';
 
 
 
@@ -11,7 +12,7 @@ import monitorRoutes from './routes/monitor.routes.js';
 dotenv.config();
 
 
-const app = express(); 
+const app = express();
 
 
 connectDB();
@@ -23,6 +24,7 @@ app.use(morgan('dev'));
 
 
 
+setupSwagger(app);
 
 app.use('/api', monitorRoutes);
 

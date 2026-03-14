@@ -79,11 +79,13 @@ export const pingWebsite = async (req, res) => {
 export const getAllLogs = async (req, res) => {
   try {
     // 1. Find the URLs this user monitors
-    const userTargets = await Target.find({ user: req.user._id }).select('url');
-    const userUrls = userTargets.map(t => t.url);
+    const userTargets = await Target.find({ user: req.user._id }).select('_id');
+    const targetIds = userTargets.map(t => t._id);
+
+
 
     // 2. Fetch logs only for those URLs
-    const logs = await Monitor.find({ url: { $in: userUrls } }).sort({ createdAt: -1 });
+    const logs = await Monitor.find({ target: { $in: targetIds } }).sort({ createdAt: -1 });
     res.status(200).json({
       count: logs.length,
       logs
@@ -152,14 +154,12 @@ export const autoCleanup = async () => {
 export const getTargetStats = async (req, res) => {
    try {
         const { id } = req.params;
-        
         const target = await Target.findOne({ _id: id, user: req.user._id });
 
-        if (!target) {
-            return res.status(404).json({ message: "Target not found or unauthorized" });
-        }
+        if (!target) return res.status(404).json({ message: "Target not found" });
 
-        const logs = await Monitor.find({ url: target.url });
+        // FIX: Search by target ID, not URL string
+        const logs = await Monitor.find({ target: target._id });
 
         if (logs.length === 0) {
             return res.status(200).json({ message: "No logs found for this target yet.", stats: null });

@@ -9,7 +9,7 @@ const monitorSchema = new mongoose.Schema({
   target: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Target',
-    required: true 
+    required: false
   },
   status: {
     type: String,

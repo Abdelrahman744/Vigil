@@ -99,8 +99,14 @@ export const getAllLogs = async (req, res) => {
 
 export const clearLogs = async (req, res) => {
   try {
-    await Monitor.deleteMany({});
-    res.status(200).json({ message: "All logs cleared successfully" });
+    // 1. Find the URLs this user monitors
+    const userTargets = await Target.find({ user: req.user._id }).select('_id');
+    const targetIds = userTargets.map(t => t._id);
+
+    // 2. Delete ONLY the logs associated with this user's targets
+    await Monitor.deleteMany({ target: { $in: targetIds } });
+    
+    res.status(200).json({ message: "Your logs cleared successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error clearing logs", error: error.message });
   }

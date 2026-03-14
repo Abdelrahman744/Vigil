@@ -18,10 +18,10 @@ const transporter = nodemailer.createTransport({
 
 // Helper to send the alert email
 
-const sendAlertEmail = async (targetName, url) => {
+const sendAlertEmail = async (targetName, url, userEmail) => {
     const mailOptions = {
         from: `"Vigil Monitor" <${process.env.EMAIL_USER}>`,
-        to: userEmail, // Send to the actual user
+        to: userEmail, 
         subject: `⚠️ ALERT: ${targetName} is DOWN`,
         html: `<h3>Website Down Alert</h3>
                <p><strong>Target:</strong> ${targetName}</p>

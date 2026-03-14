@@ -35,6 +35,7 @@ export const deleteTarget = async (req, res) => {
         if (!deletedTarget) {
             return res.status(404).json({ message: "Target not found or unauthorized" });
         }
+        await Monitor.deleteMany({ target: id });
 
         res.status(200).json({ message: "Target deleted successfully", deletedTarget });
     } catch (error) {

@@ -5,16 +5,17 @@ import Target from '../models/target.model.js';
 export const addTarget = async (req, res) => {
     try {
         const { url, name } = req.body;
-        const newTarget = await Target.create({ url, name });
+        
+        const newTarget = await Target.create({ url, name, user: req.user._id });
         res.status(201).json(newTarget);
     } catch (error) {
         res.status(500).json({ message: "Error adding target", error: error.message });
     }
 };
-
 export const getTargets = async (req, res) => {
   try {
-    const targets = await Target.find().sort({ createdAt: -1 });
+    // Only fetch targets belonging to the logged-in user
+    const targets = await Target.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({
       count: targets.length,
       targets
@@ -23,16 +24,16 @@ export const getTargets = async (req, res) => {
     res.status(500).json({ message: "Error fetching targets", error: error.message });
   }
 };
-
 // Delete a specific target by ID
 
 export const deleteTarget = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedTarget = await Target.findByIdAndDelete(id);
+        // Ensure the target being deleted belongs to the user
+        const deletedTarget = await Target.findOneAndDelete({ _id: id, user: req.user._id });
 
         if (!deletedTarget) {
-            return res.status(404).json({ message: "Target not found" });
+            return res.status(404).json({ message: "Target not found or unauthorized" });
         }
 
         res.status(200).json({ message: "Target deleted successfully", deletedTarget });
@@ -77,7 +78,12 @@ export const pingWebsite = async (req, res) => {
 
 export const getAllLogs = async (req, res) => {
   try {
-    const logs = await Monitor.find().sort({ createdAt: -1 });
+    // 1. Find the URLs this user monitors
+    const userTargets = await Target.find({ user: req.user._id }).select('url');
+    const userUrls = userTargets.map(t => t.url);
+
+    // 2. Fetch logs only for those URLs
+    const logs = await Monitor.find({ url: { $in: userUrls } }).sort({ createdAt: -1 });
     res.status(200).json({
       count: logs.length,
       logs
@@ -99,16 +105,15 @@ export const clearLogs = async (req, res) => {
 };
 
 
-// Toggle monitoring status 
 export const toggleTarget = async (req, res) => {
     try {
         const { id } = req.params;
-        const target = await Target.findById(id);
+        // Ensure the target being toggled belongs to the user
+        const target = await Target.findOne({ _id: id, user: req.user._id });
 
         if (!target) {
-            return res.status(404).json({ message: "Target not found" });
+            return res.status(404).json({ message: "Target not found or unauthorized" });
         }
-
         
         target.isActive = !target.isActive;
         await target.save();
@@ -121,7 +126,6 @@ export const toggleTarget = async (req, res) => {
         res.status(500).json({ message: "Error toggling status", error: error.message });
     }
 };
-
 
 
 // Remove logs older than 24 hours
@@ -146,12 +150,13 @@ export const autoCleanup = async () => {
 // Get detailed stats for a specific target
 
 export const getTargetStats = async (req, res) => {
-    try {
+   try {
         const { id } = req.params;
-        const target = await Target.findById(id);
+        
+        const target = await Target.findOne({ _id: id, user: req.user._id });
 
         if (!target) {
-            return res.status(404).json({ message: "Target not found" });
+            return res.status(404).json({ message: "Target not found or unauthorized" });
         }
 
         const logs = await Monitor.find({ url: target.url });

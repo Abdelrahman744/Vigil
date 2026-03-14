@@ -6,6 +6,11 @@ const monitorSchema = new mongoose.Schema({
     required: [true, "You must provide a URL to monitor"],
     trim: true
   },
+  target: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Target',
+    required: true 
+  },
   status: {
     type: String,
     enum: ['Up', 'Down', 'Pending'],

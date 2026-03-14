@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 const sendAlertEmail = async (targetName, url) => {
     const mailOptions = {
         from: `"Vigil Monitor" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER, // Sending alert to yourself
+        to: userEmail, // Send to the actual user
         subject: `⚠️ ALERT: ${targetName} is DOWN`,
         html: `<h3>Website Down Alert</h3>
                <p><strong>Target:</strong> ${targetName}</p>
@@ -66,25 +66,26 @@ const pingWithRetry = async (url, retries = 3, delay = 2000) => {
 
 
 export const runHeartbeat = async () => {
-    console.log('--- 🛡️ Vigil Heartbeat: Triggered ---');
-    const targets = await Target.find({ isActive: true });
-
+    const targets = await Target.find({ isActive: true }).populate('user', 'email');
     if (targets.length === 0) return { message: 'No active targets' };
 
-    for (const target of targets) {
+    // Run all pings at the same time
+    await Promise.allSettled(targets.map(async (target) => {
         const result = await pingWithRetry(target.url);
         
         if (result.status === 'Down') {
-            await sendAlertEmail(target.name, target.url);
+            await sendAlertEmail(target.name, target.url, target.user.email);
         }
 
         await Monitor.create({
+            target: target._id,
             url: target.url,
             status: result.status,
             responseTime: result.responseTime,
             statusCode: result.statusCode, 
             errorMessage: result.errorMessage 
         });
-    }
+    }));
+
     return { message: 'Heartbeat completed' };
 };

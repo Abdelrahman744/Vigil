@@ -191,18 +191,7 @@ router.get('/targets', getTargets);
  */
 router.delete('/targets/:id', deleteTarget);
 
-/**
- * @swagger
- * /targets:
- * delete:
- * summary: Remove ALL monitored targets for the user
- * tags: [Target]
- * security:
- * - bearerAuth: []
- * responses:
- * 200:
- * description: All targets and logs deleted successfully
- */
+
 router.delete('/targets', deleteAllTargets);
 
 /**

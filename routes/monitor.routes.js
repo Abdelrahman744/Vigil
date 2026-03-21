@@ -1,7 +1,7 @@
 import express from 'express';
 import { signup, login } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
-import { pingWebsite, getAllLogs, clearLogs, addTarget, getTargets, deleteTarget, toggleTarget, getTargetStats, autoCleanup } from '../controllers/monitor.controller.js';
+import { pingWebsite, getAllLogs, clearLogs, addTarget, getTargets,deleteAllTargets, deleteTarget, toggleTarget, getTargetStats, autoCleanup } from '../controllers/monitor.controller.js';
 import { runHeartbeat } from '../services/monitor.service.js';
 import { validate, signupSchema, loginSchema, addTargetSchema, pingWebsiteSchema } from '../middlewares/validate.middleware.js';
 
@@ -190,6 +190,20 @@ router.get('/targets', getTargets);
  *         description: Target deleted
  */
 router.delete('/targets/:id', deleteTarget);
+
+/**
+ * @swagger
+ * /targets:
+ * delete:
+ * summary: Remove ALL monitored targets for the user
+ * tags: [Target]
+ * security:
+ * - bearerAuth: []
+ * responses:
+ * 200:
+ * description: All targets and logs deleted successfully
+ */
+router.delete('/targets', deleteAllTargets);
 
 /**
  * @swagger

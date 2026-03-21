@@ -6,7 +6,31 @@ export const addTarget = async (req, res) => {
     try {
         const { url, name } = req.body;
         
+        // 1. Create the target
         const newTarget = await Target.create({ url, name, user: req.user._id });
+
+        // 2. Perform an immediate initial ping so it doesn't show up as "Unknown"
+        const start = Date.now();
+        try {
+            const response = await axios.get(url, { timeout: 5000 });
+            await Monitor.create({
+                target: newTarget._id,
+                url: url,
+                status: 'Up',
+                responseTime: Date.now() - start,
+                statusCode: response.status
+            });
+        } catch (error) {
+            await Monitor.create({
+                target: newTarget._id,
+                url: url,
+                status: 'Down',
+                responseTime: Date.now() - start,
+                statusCode: error.response ? error.response.status : null,
+                errorMessage: error.message
+            });
+        }
+
         res.status(201).json(newTarget);
     } catch (error) {
         res.status(500).json({ message: "Error adding target", error: error.message });

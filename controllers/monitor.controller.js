@@ -70,7 +70,7 @@ export const getTargets = async (req, res) => {
                 upChecks: upPings,
                 downChecks: totalPings - upPings,
                 availability: `${availability}%`,
-                averageLatency: `${avgResponseTime}ms`
+                averageLatency: `${avgResponseTime}`
             };
         }
 
@@ -258,7 +258,7 @@ export const getTargetStats = async (req, res) => {
                 upChecks: upPings,
                 downChecks: totalPings - upPings,
                 availability: `${availability}%`,
-                averageLatency: `${avgResponseTime}ms`
+                averageLatency: `${avgResponseTime}`
             }
         });
     } catch (error) {

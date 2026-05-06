@@ -7,9 +7,7 @@ const signToken = (id) => {
     });
 };
 
-
-
-export const signup = async (req, res, next) => { // Make sure 'next' is here
+export const signup = async (req, res) => {
     try {
         const newUser = await User.create({
             name: req.body.name,
@@ -25,13 +23,13 @@ export const signup = async (req, res, next) => { // Make sure 'next' is here
             data: { user: newUser }
         });
     } catch (err) {
-        // If you call next(err) here, you MUST have 'next' in the parameters above
         res.status(400).json({
             status: 'fail',
             message: err.message
         });
     }
 };
+
 export const login = async (req, res) => {
     const { email, password } = req.body;
 

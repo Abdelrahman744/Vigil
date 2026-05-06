@@ -3,20 +3,17 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import cors from 'cors';
 import connectDB from './config/db.js';
-import monitorRoutes from './routes/monitor.routes.js';
 import setupSwagger from './config/swagger.js';
-
-
-
+import authRoutes from './routes/auth.routes.js';
+import monitorRoutes from './routes/monitor.routes.js';
+import targetRoutes from './routes/target.routes.js';
+import cronRoutes from './routes/cron.routes.js';
 
 dotenv.config();
 
-
 const app = express();
 
-
 connectDB();
-
 
 app.use(cors({
     origin: '*',
@@ -26,11 +23,12 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
-
-
 setupSwagger(app);
 
+app.use('/api', authRoutes);
 app.use('/api', monitorRoutes);
+app.use('/api', targetRoutes);
+app.use('/api', cronRoutes);
 
 app.get('/', (req, res) => {
     res.send('Vigil API is running...');

@@ -1,4 +1,7 @@
 {
+  "name": "vigil",
+  "description": "Serverless uptime monitoring API with email alerts",
+  "main": "server.js",
   "dependencies": {
     "axios": "1.14.0",
     "bcryptjs": "^3.0.3",

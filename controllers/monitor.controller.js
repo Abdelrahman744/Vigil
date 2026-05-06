@@ -5,11 +5,11 @@ import Target from '../models/target.model.js';
 export const addTarget = async (req, res) => {
     try {
         const { url, name } = req.body;
-        
-        // 1. Create the target
+
+        // Create the target
         const newTarget = await Target.create({ url, name, user: req.user._id });
 
-        // 2. Perform an immediate initial ping so it doesn't show up as "Unknown"
+        // Perform an immediate initial ping so it doesn't show up as "Unknown"
         const start = Date.now();
         try {
             const response = await axios.get(url, { timeout: 5000 });
@@ -37,67 +37,59 @@ export const addTarget = async (req, res) => {
     }
 };
 
-
-
 export const getTargets = async (req, res) => {
-  try {
-    // 1. Fetch targets using .lean() so we can easily add new properties to the results
-    const targets = await Target.find({ user: req.user._id }).sort({ createdAt: -1 }).lean();
+    try {
+        // Fetch targets using .lean() so we can easily add new properties to the results
+        const targets = await Target.find({ user: req.user._id }).sort({ createdAt: -1 }).lean();
 
-    // 2. Fetch logs and calculate stats for each target
-    const targetsWithStats = await Promise.all(targets.map(async (target) => {
-        // Get logs for this specific target, sorted by newest first
-        const logs = await Monitor.find({ target: target._id }).sort({ createdAt: -1 });
-        
-        let stats = null;
-        let currentStatus = 'Unknown';
+        // Fetch logs and calculate stats for each target
+        const targetsWithStats = await Promise.all(targets.map(async (target) => {
+            const logs = await Monitor.find({ target: target._id }).sort({ createdAt: -1 });
 
-        if (logs.length > 0) {
-            currentStatus = logs[0].status; // The most recent ping status
+            let stats = null;
+            let currentStatus = 'Unknown';
 
-            const totalPings = logs.length;
-            const upPings = logs.filter(log => log.status === 'Up').length;
-            const availability = ((upPings / totalPings) * 100).toFixed(2);
+            if (logs.length > 0) {
+                currentStatus = logs[0].status;
 
-            // Calculate Average Response Time for "Up" pings
-            const upLogs = logs.filter(log => log.status === 'Up' && log.responseTime > 0);
-            const avgResponseTime = upLogs.length > 0 
-                ? (upLogs.reduce((acc, log) => acc + log.responseTime, 0) / upLogs.length).toFixed(2) 
-                : 0;
+                const totalPings = logs.length;
+                const upPings = logs.filter(log => log.status === 'Up').length;
+                const availability = ((upPings / totalPings) * 100).toFixed(2);
 
-            stats = {
-                totalChecks: totalPings,
-                upChecks: upPings,
-                downChecks: totalPings - upPings,
-                availability: `${availability}%`,
-                averageLatency: `${avgResponseTime}`
+                // Calculate Average Response Time for "Up" pings
+                const upLogs = logs.filter(log => log.status === 'Up' && log.responseTime > 0);
+                const avgResponseTime = upLogs.length > 0
+                    ? (upLogs.reduce((acc, log) => acc + log.responseTime, 0) / upLogs.length).toFixed(2)
+                    : 0;
+
+                stats = {
+                    totalChecks: totalPings,
+                    upChecks: upPings,
+                    downChecks: totalPings - upPings,
+                    availability: `${availability}%`,
+                    averageLatency: `${avgResponseTime}`
+                };
+            }
+
+            return {
+                ...target,
+                currentStatus,
+                stats
             };
-        }
+        }));
 
-        // Return the target combined with its new stats
-        return {
-            ...target,
-            currentStatus,
-            stats
-        };
-    }));
-
-    res.status(200).json({
-      count: targetsWithStats.length,
-      targets: targetsWithStats
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching targets", error: error.message });
-  }
+        res.status(200).json({
+            count: targetsWithStats.length,
+            targets: targetsWithStats
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching targets", error: error.message });
+    }
 };
-
-
-// Delete a specific target by ID
 
 export const deleteTarget = async (req, res) => {
     try {
         const { id } = req.params;
-        // Ensure the target being deleted belongs to the user
         const deletedTarget = await Target.findOneAndDelete({ _id: id, user: req.user._id });
 
         if (!deletedTarget) {
@@ -111,102 +103,86 @@ export const deleteTarget = async (req, res) => {
     }
 };
 
-
 export const pingWebsite = async (req, res) => {
-  const { url } = req.body;
-  const start = Date.now();
+    const { url } = req.body;
+    const start = Date.now();
 
-  try {
-    const response = await axios.get(url, { timeout: 5000 });
-    const duration = Date.now() - start;
+    try {
+        const response = await axios.get(url, { timeout: 5000 });
+        const duration = Date.now() - start;
 
-    const newPing = await Monitor.create({
-      url,
-      status: 'Up',
-      responseTime: duration,
-      statusCode: response.status //
-    });
+        const newPing = await Monitor.create({
+            url,
+            status: 'Up',
+            responseTime: duration,
+            statusCode: response.status
+        });
 
-    res.status(200).json({ message: "Ping Successful", data: newPing });
-  } catch (error) {
-    const duration = Date.now() - start;
-    const failPing = await Monitor.create({
-      url,
-      status: 'Down',
-      responseTime: duration,
-      statusCode: error.response ? error.response.status : null, //
-      errorMessage: error.message //
-    });
+        res.status(200).json({ message: "Ping Successful", data: newPing });
+    } catch (error) {
+        const duration = Date.now() - start;
+        const failPing = await Monitor.create({
+            url,
+            status: 'Down',
+            responseTime: duration,
+            statusCode: error.response ? error.response.status : null,
+            errorMessage: error.message
+        });
 
-    res.status(500).json({ message: "Ping Failed", data: failPing });
-  }
+        res.status(500).json({ message: "Ping Failed", data: failPing });
+    }
 };
-
-
-// Get all ping history
 
 export const getAllLogs = async (req, res) => {
-  try {
-    // 1. Find the URLs this user monitors
-    const userTargets = await Target.find({ user: req.user._id }).select('_id');
-    const targetIds = userTargets.map(t => t._id);
+    try {
+        const userTargets = await Target.find({ user: req.user._id }).select('_id');
+        const targetIds = userTargets.map(t => t._id);
 
-
-
-    // 2. Fetch logs only for those URLs
-    const logs = await Monitor.find({ target: { $in: targetIds } }).sort({ createdAt: -1 });
-    res.status(200).json({
-      count: logs.length,
-      logs
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching logs", error: error.message });
-  }
+        const logs = await Monitor.find({ target: { $in: targetIds } }).sort({ createdAt: -1 });
+        res.status(200).json({
+            count: logs.length,
+            logs
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching logs", error: error.message });
+    }
 };
-
-
 
 export const clearLogs = async (req, res) => {
-  try {
-    // 1. Find the URLs this user monitors
-    const userTargets = await Target.find({ user: req.user._id }).select('_id');
-    const targetIds = userTargets.map(t => t._id);
+    try {
+        const userTargets = await Target.find({ user: req.user._id }).select('_id');
+        const targetIds = userTargets.map(t => t._id);
 
-    // 2. Delete ONLY the logs associated with this user's targets
-    await Monitor.deleteMany({ target: { $in: targetIds } });
-    
-    res.status(200).json({ message: "Your logs cleared successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error clearing logs", error: error.message });
-  }
+        await Monitor.deleteMany({ target: { $in: targetIds } });
+
+        res.status(200).json({ message: "Your logs cleared successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error clearing logs", error: error.message });
+    }
 };
-
 
 export const toggleTarget = async (req, res) => {
     try {
         const { id } = req.params;
-        // Ensure the target being toggled belongs to the user
         const target = await Target.findOne({ _id: id, user: req.user._id });
 
         if (!target) {
             return res.status(404).json({ message: "Target not found or unauthorized" });
         }
-        
+
         target.isActive = !target.isActive;
         await target.save();
 
-        res.status(200).json({ 
-            message: `Monitoring ${target.isActive ? 'resumed' : 'paused'} for ${target.name}`, 
-            target 
+        res.status(200).json({
+            message: `Monitoring ${target.isActive ? 'resumed' : 'paused'} for ${target.name}`,
+            target
         });
     } catch (error) {
         res.status(500).json({ message: "Error toggling status", error: error.message });
     }
 };
 
-
 // Remove logs older than 24 hours
-
 export const autoCleanup = async () => {
     try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -221,19 +197,13 @@ export const autoCleanup = async () => {
     }
 };
 
-
-
-
-// Get detailed stats for a specific target
-
 export const getTargetStats = async (req, res) => {
-   try {
+    try {
         const { id } = req.params;
         const target = await Target.findOne({ _id: id, user: req.user._id });
 
         if (!target) return res.status(404).json({ message: "Target not found" });
 
-        // FIX: Search by target ID, not URL string
         const logs = await Monitor.find({ target: target._id });
 
         if (logs.length === 0) {
@@ -246,8 +216,8 @@ export const getTargetStats = async (req, res) => {
 
         // Calculate Average Response Time for "Up" pings
         const upLogs = logs.filter(log => log.status === 'Up' && log.responseTime > 0);
-        const avgResponseTime = upLogs.length > 0 
-            ? (upLogs.reduce((acc, log) => acc + log.responseTime, 0) / upLogs.length).toFixed(2) 
+        const avgResponseTime = upLogs.length > 0
+            ? (upLogs.reduce((acc, log) => acc + log.responseTime, 0) / upLogs.length).toFixed(2)
             : 0;
 
         res.status(200).json({
@@ -266,12 +236,8 @@ export const getTargetStats = async (req, res) => {
     }
 };
 
-
-
-
 export const deleteAllTargets = async (req, res) => {
     try {
-        // 1. Find all targets belonging to the user
         const userTargets = await Target.find({ user: req.user._id }).select('_id');
         const targetIds = userTargets.map(t => t._id);
 
@@ -279,15 +245,13 @@ export const deleteAllTargets = async (req, res) => {
             return res.status(404).json({ message: "No targets found to delete." });
         }
 
-        // 2. Delete all ping logs associated with these targets
         await Monitor.deleteMany({ target: { $in: targetIds } });
 
-        // 3. Delete the targets themselves
         const result = await Target.deleteMany({ user: req.user._id });
 
-        res.status(200).json({ 
-            message: "All targets and their associated logs deleted successfully", 
-            deletedCount: result.deletedCount 
+        res.status(200).json({
+            message: "All targets and their associated logs deleted successfully",
+            deletedCount: result.deletedCount
         });
     } catch (error) {
         res.status(500).json({ message: "Error deleting targets", error: error.message });

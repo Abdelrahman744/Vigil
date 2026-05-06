@@ -10,7 +10,7 @@ const connectDB = async () => {
     console.error("❌ Missing MONGODB_URI in environment (set it in .env)");
     process.exit(1);
   }
-  
+
   try {
     const conn = await mongoose.connect(MONGODB_URI);
     console.log(`✅ Connected to MongoDB: ${conn.connection.host}`);

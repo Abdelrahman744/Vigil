@@ -17,7 +17,7 @@ export default function Target({ target, toggleTarget, deleteTarget }) {
 			</td>
 
 			<td className="space-x-2 text-center">
-				{Math.round(Number(target.stats.averageLatency)) || "- "} ms
+				{Math.round(Number(target?.stats?.averageLatency || 0)) || "- "} ms
 			</td>
 
 			<td className="space-x-2 text-center">

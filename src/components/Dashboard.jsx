@@ -36,6 +36,7 @@ export default function Dashboard() {
 			getTarget();
 			setUrl("");
 			setName("");
+			showHideToast("Add Target successfully", "success");
 		} catch {
 			showHideToast("Invalid request", "error");
 		}

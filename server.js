@@ -1,9 +1,9 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
-import cors from 'cors';
 import connectDB from './config/db.js';
 import setupSwagger from './config/swagger.js';
+import { sanitizeBody } from './middlewares/sanitize.middleware.js';
 import authRoutes from './routes/auth.routes.js';
 import monitorRoutes from './routes/monitor.routes.js';
 import targetRoutes from './routes/target.routes.js';
@@ -15,14 +15,9 @@ const app = express();
 
 connectDB();
 
-app.use((req, res, next) => {
-    // CORS headers are now handled by vercel.json at the edge layer
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    next();
-});
+
 app.use(express.json());
+app.use(sanitizeBody);
 app.use(morgan('dev'));
 
 setupSwagger(app);

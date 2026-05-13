@@ -1,10 +1,14 @@
 import axios from 'axios';
 import Monitor from '../models/monitor.model.js';
 import Target from '../models/target.model.js';
+import { validateUrlNotPrivate } from '../validators/url.validator.js';
 
 export const addTarget = async (req, res) => {
     try {
         const { url, name } = req.body;
+
+        // SSRF Protection: block private/reserved IP ranges
+        await validateUrlNotPrivate(url);
 
         // Create the target
         const newTarget = await Target.create({ url, name, user: req.user._id });
@@ -33,7 +37,9 @@ export const addTarget = async (req, res) => {
 
         res.status(201).json(newTarget);
     } catch (error) {
-        res.status(500).json({ message: "Error adding target", error: error.message });
+        // Return 400 for SSRF validation errors, 500 for everything else
+        const status = error.message.startsWith('Blocked') || error.message.startsWith('Invalid URL') ? 400 : 500;
+        res.status(status).json({ message: "Error adding target", error: error.message });
     }
 };
 
@@ -105,6 +111,14 @@ export const deleteTarget = async (req, res) => {
 
 export const pingWebsite = async (req, res) => {
     const { url } = req.body;
+
+    // SSRF Protection: block private/reserved IP ranges
+    try {
+        await validateUrlNotPrivate(url);
+    } catch (error) {
+        return res.status(400).json({ message: "Blocked URL", error: error.message });
+    }
+
     const start = Date.now();
 
     try {
@@ -185,8 +199,10 @@ export const toggleTarget = async (req, res) => {
 // Remove logs older than 24 hours
 export const autoCleanup = async () => {
     try {
+
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const result = await Monitor.deleteMany({
+
             createdAt: { $lt: twentyFourHoursAgo }
         });
         if (result.deletedCount > 0) {

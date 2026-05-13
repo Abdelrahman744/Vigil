@@ -2,6 +2,7 @@ import axios from 'axios';
 import nodemailer from 'nodemailer';
 import Target from '../models/target.model.js';
 import Monitor from '../models/monitor.model.js';
+import { validateUrlNotPrivate } from '../validators/url.validator.js';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -32,6 +33,9 @@ const sendAlertEmail = async (targetName, url, userEmail) => {
 
 // Helper function to retry pings with error categorization
 const pingWithRetry = async (url, retries = 3, delay = 2000) => {
+    // SSRF Protection: re-validate on every heartbeat in case DNS changed
+    await validateUrlNotPrivate(url);
+
     for (let i = 0; i < retries; i++) {
         const start = Date.now();
         try {

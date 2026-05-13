@@ -37,9 +37,16 @@ export const addTarget = async (req, res) => {
 
         res.status(201).json(newTarget);
     } catch (error) {
-        // Return 400 for SSRF validation errors, 500 for everything else
-        const status = error.message.startsWith('Blocked') || error.message.startsWith('Invalid URL') ? 400 : 500;
-        res.status(status).json({ message: "Error adding target", error: error.message });
+        // Safe errors to show the user (SSRF validation)
+        if (error.message.startsWith('Blocked') || error.message.startsWith('Invalid URL')) {
+            return res.status(400).json({ message: "Invalid URL", error: error.message });
+        }
+
+        // Log the real database error to your console for debugging
+        console.error("Target Creation Error:", error);
+
+        // Send a GENERIC error to the user
+        res.status(500).json({ message: "Internal server error while adding target" });
     }
 };
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
+import { sanitizeBody } from '../middlewares/sanitize.middleware.js';
 import { addTargetSchema } from '../validators/target.validator.js';
 import {
     addTarget,
@@ -47,7 +48,7 @@ router.use(protect);
  *       200:
  *         description: List of targets
  */
-router.post('/targets', validate(addTargetSchema), addTarget);
+router.post('/targets', sanitizeBody, validate(addTargetSchema), addTarget);
 router.get('/targets', getTargets);
 
 /**

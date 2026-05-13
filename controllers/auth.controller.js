@@ -1,6 +1,7 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
+
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '30d',
@@ -17,10 +18,14 @@ export const signup = async (req, res) => {
 
         const token = signToken(newUser._id);
 
+        // Strip password hash before sending response
+        const userObj = newUser.toObject();
+        delete userObj.password;
+
         res.status(201).json({
             status: 'success',
             token,
-            data: { user: newUser }
+            data: { user: userObj }
         });
     } catch (err) {
         res.status(400).json({
@@ -31,17 +36,21 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Please provide email and password' });
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Please provide email and password' });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user || !(await user.comparePassword(password))) {
+            return res.status(401).json({ message: 'Incorrect email or password' });
+        }
+
+        const token = signToken(user._id);
+        res.status(200).json({ status: 'success', token });
+    } catch (err) {
+        res.status(500).json({ status: 'fail', message: 'Login failed' });
     }
-
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
-        return res.status(401).json({ message: 'Incorrect email or password' });
-    }
-
-    const token = signToken(user._id);
-    res.status(200).json({ status: 'success', token });
 };

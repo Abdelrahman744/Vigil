@@ -4,6 +4,17 @@ import { autoCleanup } from '../controllers/monitor.controller.js';
 
 const router = express.Router();
 
+// Authenticate cron requests using the CRON_SECRET env variable
+const verifyCronSecret = (req, res, next) => {
+    const secret = req.headers['x-cron-secret'];
+    if (!secret || secret !== process.env.CRON_SECRET) {
+        return res.status(401).json({ message: 'Unauthorized: invalid or missing cron secret' });
+    }
+    next();
+};
+
+router.use(verifyCronSecret);
+
 /**
  * @swagger
  * /cron/heartbeat:
@@ -17,9 +28,7 @@ const router = express.Router();
  *         description: Heartbeat completed
  */
 router.get('/cron/heartbeat', async (req, res) => {
-    if (req.headers['x-api-key'] !== process.env.CRON_SECRET) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+
     try {
         const result = await runHeartbeat();
         res.status(200).json(result);

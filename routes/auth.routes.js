@@ -1,9 +1,27 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { signup, login } from '../controllers/auth.controller.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { signupSchema, loginSchema } from '../validators/auth.validator.js';
 
 const router = express.Router();
+
+// Rate limiters to prevent brute-force and signup spam
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,    // 15 minutes
+    max: 10,                      // 10 login attempts per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { status: 'fail', message: 'Too many login attempts, please try again after 15 minutes' }
+});
+
+const signupLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,    // 1 hour
+    max: 5,                       // 5 signups per hour per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { status: 'fail', message: 'Too many accounts created, please try again after an hour' }
+});
 
 /**
  * @swagger
@@ -29,7 +47,7 @@ const router = express.Router();
  *       201:
  *         description: Created
  */
-router.post('/signup', validate(signupSchema), signup);
+router.post('/signup', signupLimiter, validate(signupSchema), signup);
 
 /**
  * @swagger
@@ -53,6 +71,6 @@ router.post('/signup', validate(signupSchema), signup);
  *       200:
  *         description: Success
  */
-router.post('/login', validate(loginSchema), login);
+router.post('/login', loginLimiter, validate(loginSchema), login);
 
 export default router;
